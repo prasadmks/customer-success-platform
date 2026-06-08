@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Customer Success Intelligence Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{font-family:'Inter',sans-serif;background:#f9f9fa;color:#0f1b2d;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:#dedee3;border-radius:2px;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(1.4);}}
+@media(max-width:768px){
+  #root{padding:0 !important;}
+  #root>nav{padding:0 12px;font-size:10px;}
+  #root>div{padding:10px 12px !important;gap:8px !important;}
+  #root>div>div{grid-template-columns:1fr !important;gap:8px !important;}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+
+// ─── COLORS ──────────────────────────────────────────────────────────────────
+var C = {
+  navBg:   "#0f141a",
+  blue:    "#006ce0",  blueL:   "#e8f0fc",  blueM:   "#99c0f0",
+  teal:    "#00a3b5",  tealL:   "#e2f5f7",  tealM:   "#7dd4dc",
+  purple:  "#7300e5",  purpleL: "#f0e8ff",  purpleM: "#bb80f5",
+  orange:  "#e07b00",  orangeL: "#fff1e0",  orangeM: "#f5c077",
+  pageBg:  "#f9f9fa",  white:   "#ffffff",  border:  "#dedee3",
+  textP:   "#0f1b2d",  textS:   "#5f6b7a",  textM:   "#8d99a8"
+};
+
+// ─── DOM HELPER ───────────────────────────────────────────────────────────────
+// Children must be an array of strings or DOM nodes.
+function make(tag, styles, children) {
+  var e = document.createElement(tag);
+  if (styles) {
+    Object.keys(styles).forEach(function(k){ e.style[k] = styles[k]; });
+  }
+  if (children) {
+    children.forEach(function(c) {
+      if (c == null || c === false) return;
+      if (typeof c === 'string') {
+        e.appendChild(document.createTextNode(c));
+      } else {
+        e.appendChild(c);
+      }
+    });
+  }
+  return e;
+}
+
+function d(styles, children) { return make('div',  styles, children); }
+function s(styles, children) { return make('span', styles, children); }
+function p(styles, children) { return make('p',    styles, children); }
+
+function pip(color, animate) {
+  return s({
+    display:'inline-block', width:'7px', height:'7px',
+    borderRadius:'50%', background:color, flexShrink:'0',
+    animation: animate ? 'pulse 1.5s ease-in-out infinite' : 'none'
+  }, []);
+}
+
+// Section header with colored marker + label + optional right badge
+function secHdr(label, color, badge) {
+  var left = d({display:'flex', alignItems:'center', gap:'7px'}, [
+    d({width:'8px', height:'8px', borderRadius:'2px', background:color, flexShrink:'0'}, []),
+    s({fontSize:'11px', fontWeight:'700', color:color,
+       textTransform:'uppercase', letterSpacing:'0.1em'}, [label])
+  ]);
+  var row = d({display:'flex', alignItems:'center', justifyContent:'space-between',
+               marginBottom:'12px'}, [left]);
+  if (badge) {
+    row.appendChild(s({fontSize:'10px', color:C.textM, background:C.pageBg,
+      border:'1px solid '+C.border, borderRadius:'4px', padding:'3px 10px'}, [badge]));
+  }
+  return row;
+}
+
+// ─── CONTENT DATA ─────────────────────────────────────────────────────────────
+var TENETS = [
+  {label:'AI First',    color:C.blue,
+   sub:'Intelligence embedded at every step — from signal detection to outcome delivery'},
+  {label:'Agentic',     color:C.teal,
+   sub:'Autonomous CS motions — routing, monitoring, and intervention without manual triage'},
+  {label:'Continuous',  color:C.purple,
+   sub:'Persistent signal monitoring across the full customer lifecycle, 24/7'},
+  {label:'Ecosystem',   color:C.orange,
+   sub:'Platform agents co-built with partners — open for customers and the field to extend'}
+];
+
+var PHASES = [
+  {label:'Activation',    desc:'Product Implementation',           color:C.blue},
+  {label:'Adoption',      desc:'Product Expansion',                color:C.purple},
+  {label:'Business Value Realization', desc:'Product Outcome Acceleration', color:C.orange}
+];
+
+var PHASE_COLOR = {
+  'Activation':             C.blue,
+  'Adoption':               C.purple,
+  'Business Value Realization': C.orange
+};
+
+var H_AGENTS = [
+  {phase:'Activation', name:'Outcome Mapping',
+   desc:'Translates field observations and committed business goals into measurable KPI trajectories — the baseline every downstream agent calibrates against.'},
+  {phase:'Activation', name:'Partner Qualification',
+   desc:'Scores partner delivery capability against customer outcome requirements — ensuring the right partner is matched before activation begins.'},
+  {phase:'Adoption', name:'Health Monitoring',
+   desc:'Reads product signals continuously against cohort benchmarks — detecting drift early enough to intervene, not late enough to rescue.'},
+  {phase:'Adoption', name:'Engagement Routing',
+   desc:'Routes the right intervention — human, digital, or partner — to the right account at the right moment, with measurable routing accuracy.'},
+  {phase:'Business Value Realization', name:'Outcome Prediction & Intelligence',
+   desc:'Forecasts trajectory toward committed outcomes and closes the loop — translating product signals into business language that earns renewal.'}
+];
+
+var PRODUCTS = [
+  {name:'Amazon Connect', color:C.teal, agents:[
+    {phase:'Activation',    name:'CX Journey Design',
+     desc:'Designs AI-native resolution journeys from conversation transcript data'},
+    {phase:'Adoption',      name:'CX Agent Build',
+     desc:'Builds and deploys AI agents from live transcript patterns automatically'},
+    {phase:'Business Value Realization',name:'CX Optimize',
+     desc:'Compounds containment weekly from live conversation signals'}
+  ]},
+  {name:'Kiro', color:C.purple, agents:[
+    {phase:'Activation',    name:'Workspace Onboarding',
+     desc:'Configures workspace, specs, and steering files for maximum IDE value'},
+    {phase:'Adoption',      name:'Developer Adoption',
+     desc:'Detects workflow drop-off and re-engages inactive developers contextually'},
+    {phase:'Business Value Realization',name:'AI Effectiveness',
+     desc:'Scores suggestion acceptance rates and tracks developer productivity gains'}
+  ]},
+  {name:'Amazon Quick', color:C.blue, agents:[
+    {phase:'Activation',    name:'Workspace Integration',
+     desc:'Integrates data sources and baselines team productivity before rollout'},
+    {phase:'Adoption',      name:'Habit Formation',
+     desc:'Nudges teams toward sustained use of underutilized capabilities'},
+    {phase:'Business Value Realization',name:'Work Intelligence',
+     desc:'Generates time-savings and decision-velocity business impact reports'}
+  ]},
+  {name:'Observability', color:C.orange, agents:[
+    {phase:'Activation',    name:'Instrumentation Coverage',
+     desc:'Identifies telemetry gaps and generates a targeted instrumentation roadmap'},
+    {phase:'Adoption',      name:'Alert Optimization',
+     desc:'Reduces alert fatigue through deduplication and threshold tuning'},
+    {phase:'Business Value Realization',name:'Insight-to-Action',
+     desc:'Converts anomaly detections into prioritized remediation steps'}
+  ]}
+];
+
+var INTEL = [
+  'Amazon Connect Analytics',
+  'Product Usage Signals',
+  'Contact Lens',
+  'Partner Delivery Scorecard'
+];
+
+// ─── SECTION BUILDERS ─────────────────────────────────────────────────────────
+
+function buildNav() {
+  var nav = make('nav', {
+    height:'46px', background:C.navBg, display:'flex', alignItems:'center',
+    padding:'0 28px', flexShrink:'0', borderBottom:'1px solid rgba(255,255,255,0.07)'
+  }, []);
+
+  // AWS logo: lowercase "aws" + orange arrow-smile beneath (matches real AWS logo)
+  var awsText = s({fontSize:'15px', fontWeight:'800', color:C.white,
+    letterSpacing:'2px', lineHeight:'1', fontStyle:'normal'}, ['aws']);
+
+  // Arrow-smile SVG: arc from left to right with upward arrow tip at right end
+  var arcSvg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  arcSvg.setAttribute('width','34'); arcSvg.setAttribute('height','10');
+  arcSvg.setAttribute('viewBox','0 0 34 10');
+  arcSvg.style.cssText = 'display:block;margin-top:1px;';
+  // Main arc
+  var arcPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+  arcPath.setAttribute('d','M1 3 Q17 11 30 4');
+  arcPath.setAttribute('stroke','#ff9900');
+  arcPath.setAttribute('stroke-width','2.2');
+  arcPath.setAttribute('fill','none');
+  arcPath.setAttribute('stroke-linecap','round');
+  arcSvg.appendChild(arcPath);
+  // Arrow tip pointing upper-right
+  var arrowTip = document.createElementNS('http://www.w3.org/2000/svg','path');
+  arrowTip.setAttribute('d','M27 2 L31 4 L28 7');
+  arrowTip.setAttribute('stroke','#ff9900');
+  arrowTip.setAttribute('stroke-width','2');
+  arrowTip.setAttribute('fill','none');
+  arrowTip.setAttribute('stroke-linecap','round');
+  arrowTip.setAttribute('stroke-linejoin','round');
+  arcSvg.appendChild(arrowTip);
+
+  var logoCol = d({display:'flex', flexDirection:'column', alignItems:'center',
+    marginRight:'14px'}, [awsText, arcSvg]);
+
+  var vline = d({width:'1px', height:'18px', background:'rgba(255,255,255,0.2)',
+    marginRight:'12px', flexShrink:'0'}, []);
+
+  var platLabel = s({fontSize:'12px', fontWeight:'600', color:C.white},
+    ['Customer Success Intelligence Platform']);
+
+  var left = d({display:'flex', alignItems:'center', flex:'1'}, [logoCol, vline, platLabel]);
+
+  var right = d({display:'flex', alignItems:'center', gap:'7px'}, [
+    pip(C.teal, true),
+    s({fontSize:'11px', color:'rgba(255,255,255,0.55)'}, ['4 Products · 17 Agents'])
+  ]);
+
+  nav.appendChild(left);
+  nav.appendChild(right);
+  return nav;
+}
+
+function buildOverview() {
+  return d({background:C.white, border:'1px solid '+C.border, borderRadius:'8px',
+    padding:'16px 20px'}, [
+    secHdr('Customer Success Platform Overview', C.blue),
+    d({fontSize:'17px', fontWeight:'800', color:C.textP, lineHeight:'1.3',
+      marginBottom:'9px'},
+      ['Transforming Customer Success COE from a services team into a product team — delivering 3–5× coverage at scale.']),
+    d({fontSize:'12.5px', color:C.textS, lineHeight:'1.7'},
+      ['The CS Intelligence Platform powers every Customer Success motion across the customer journey — from Activation through Business Value Realization. ' +
+       'An AI-native, agentic system that partners, customers, and the AWS field can build on — turning circumstance into a repeatable, scalable platform.'])
+  ]);
+}
+
+function buildTenets() {
+  var cards = TENETS.map(function(t) {
+    return d({background:C.white, border:'1px solid '+C.border,
+      borderTop:'3px solid '+t.color, borderRadius:'7px', padding:'12px 14px'}, [
+      d({fontSize:'13px', fontWeight:'700', color:C.textP, marginBottom:'5px'}, [t.label]),
+      d({fontSize:'11px', color:C.textS, lineHeight:'1.5'}, [t.sub])
+    ]);
+  });
+  return d({}, [
+    secHdr('Platform Tenets', C.textM),
+    d({display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'10px'}, cards)
+  ]);
+}
+
+function buildJourney() {
+  var blocks = PHASES.map(function(ph) {
+    return d({background:ph.color, borderRadius:'7px', padding:'12px 16px'}, [
+      d({fontSize:'14px', fontWeight:'700', color:C.white, marginBottom:'4px'}, [ph.label]),
+      d({fontSize:'11px', color:'rgba(255,255,255,0.85)'}, [ph.desc])
+    ]);
+  });
+  return d({}, [
+    secHdr('Customer Engagement Journey', C.textM),
+    d({display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px'}, blocks)
+  ]);
+}
+
+function buildHAgents() {
+  var phaseOrder = ['Activation','Adoption','Business Value Realization'];
+  var cols = phaseOrder.map(function(ph) {
+    var pc = PHASE_COLOR[ph];
+    var agentsInPhase = H_AGENTS.filter(function(a){ return a.phase === ph; });
+    var cards = agentsInPhase.map(function(ag) {
+      return d({background:C.pageBg, border:'1px solid '+C.border,
+        borderTop:'3px solid '+pc, borderRadius:'6px',
+        padding:'11px 13px', marginBottom:'8px'}, [
+        d({fontSize:'12px', fontWeight:'700', color:C.textP, marginBottom:'5px'}, [ag.name]),
+        d({fontSize:'10.5px', color:C.textS, lineHeight:'1.5'}, [ag.desc])
+      ]);
+    });
+    var phLabel = d({fontSize:'9px', fontWeight:'700', color:pc,
+      textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'8px'}, [ph]);
+    var colChildren = [phLabel].concat(cards);
+    return d({}, colChildren);
+  });
+
+  return d({background:C.white, border:'2px solid '+C.teal,
+    borderRadius:'8px', padding:'14px 18px'}, [
+    secHdr('Horizontal Agents — applicable across all AWS Products', C.teal),
+    d({display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'12px'}, cols)
+  ]);
+}
+
+function buildPAgents() {
+  var phaseOrder = ['Activation','Adoption','Business Value Realization'];
+
+  // Header row: blank corner + 3 PHASE column headers
+  var hdrCells = [d({}, [])]; // corner
+  phaseOrder.forEach(function(ph) {
+    var pc = PHASE_COLOR[ph];
+    hdrCells.push(
+      d({paddingBottom:'7px', borderBottom:'2px solid '+pc}, [
+        s({fontSize:'11px', fontWeight:'700', color:pc}, [ph])
+      ])
+    );
+  });
+  var hdrRow = d({display:'grid', gridTemplateColumns:'120px repeat(3,1fr)',
+    gap:'8px', marginBottom:'8px'}, hdrCells);
+
+  // One DATA ROW per product
+  var dataRows = PRODUCTS.map(function(prod) {
+    var cells = [
+      // Product name label cell
+      d({display:'flex', alignItems:'center', paddingRight:'8px',
+         borderRight:'2px solid '+prod.color}, [
+        s({fontSize:'11px', fontWeight:'700', color:prod.color, lineHeight:'1.3'}, [prod.name])
+      ])
+    ];
+    // One cell per phase
+    phaseOrder.forEach(function(ph) {
+      var agent = null;
+      for (var i=0; i<prod.agents.length; i++) {
+        if (prod.agents[i].phase === ph) { agent = prod.agents[i]; break; }
+      }
+      var cell;
+      if (agent) {
+        cell = d({background:prod.color+'14', border:'1px solid '+prod.color+'38',
+          borderRadius:'5px', padding:'9px 11px'}, [
+          d({fontSize:'11px', fontWeight:'700', color:C.textP, marginBottom:'4px'}, [agent.name]),
+          d({fontSize:'10px', color:C.textS, lineHeight:'1.4'}, [agent.desc])
+        ]);
+      } else {
+        cell = d({background:prod.color+'0a', border:'1px solid '+prod.color+'20',
+          borderRadius:'5px', padding:'9px 11px'}, []);
+      }
+      cells.push(cell);
+    });
+    return d({display:'grid', gridTemplateColumns:'120px repeat(3,1fr)',
+      gap:'8px', marginBottom:'8px', alignItems:'center'}, cells);
+  });
+
+  var allChildren = [
+    secHdr('Product-Specific Agents — targeted to accelerate Product Feature Usage', C.purple),
+    hdrRow
+  ].concat(dataRows);
+
+  return d({background:C.white, border:'2px solid '+C.purple,
+    borderRadius:'8px', padding:'14px 18px'}, allChildren);
+}
+
+function buildIntel() {
+  var cards = INTEL.map(function(src) {
+    return d({background:C.blueL, border:'1px solid '+C.blueM,
+      borderRadius:'5px', padding:'11px 12px', textAlign:'center'}, [
+      s({fontSize:'11px', fontWeight:'600', color:C.blue, lineHeight:'1.4'}, [src])
+    ]);
+  });
+  return d({background:C.white, border:'1px solid '+C.border,
+    borderRadius:'8px', padding:'14px 18px'}, [
+    secHdr('Platform Intelligence Layer', C.blue),
+    d({display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'10px'}, cards)
+  ]);
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+  var root = document.getElementById('root');
+  root.style.display = 'flex';
+  root.style.flexDirection = 'column';
+  root.style.minHeight = '100vh';
+
+  root.appendChild(buildNav());
+
+  var main = d({
+    flex:'1', display:'flex', flexDirection:'column',
+    gap:'10px', padding:'14px 28px 24px',
+    maxWidth:'1400px', width:'100%', margin:'0 auto'
+  }, [
+    buildOverview(),
+    buildTenets(),
+    buildJourney(),
+    buildHAgents(),
+    buildPAgents(),
+    buildIntel()
+  ]);
+
+  root.appendChild(main);
+}
+
+try {
+  render();
+} catch(e) {
+  document.getElementById('root').textContent =
+    'Rendering error: ' + e.message + '. Please open in Chrome.';
+}
+
+</script>
+</body>
+</html>
